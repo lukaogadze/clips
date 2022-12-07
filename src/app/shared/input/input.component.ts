@@ -7,7 +7,7 @@ import {FormControl} from "@angular/forms";
   styleUrls: ['./input.component.css']
 })
 export class InputComponent {
-    @Input() control: FormControl<string | null> = new FormControl<string | null>('');
+    @Input() control: FormControl<string | number | null> = new FormControl<string | null>('');
     @Input() type: string = 'text';
     @Input() placeholder: string = '';
     @Input() format: string = '';
