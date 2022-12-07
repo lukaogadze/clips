@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import {FormControl, FormGroup, Validators} from "@angular/forms";
 import {AuthService} from "../../services/auth.service";
+import {AlertColor} from "../../shared/alert/alert.component";
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,7 @@ export class LoginComponent {
     });
     showAlert: boolean;
     alertMessage: string;
-    alertColor: string;
+    alertColor: AlertColor;
     inSubmission: boolean = false;
 
     constructor(private readonly _authService: AuthService) {

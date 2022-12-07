@@ -1,29 +1,36 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 import {FormControl, FormGroup, Validators} from "@angular/forms";
 import {AuthService} from "../../services/auth.service";
 import {UserModel} from "../../models/user.model";
+import {AlertColor} from "../../shared/alert/alert.component";
+import {RegisterValidators} from "../validators/register-validators";
+import {EmailTakenValidator} from "../validators/email-taken-validator.service";
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css']
+    selector: 'app-register',
+    templateUrl: './register.component.html',
+    styleUrls: ['./register.component.css']
 })
 export class RegisterComponent {
     readonly registerForm = new FormGroup({
-        name: new FormControl('', [Validators.required, Validators.minLength(3)]),
-        email: new FormControl('', [Validators.required, Validators.email]),
-        age: new FormControl<number | null>(null, [Validators.required, Validators.min(18), Validators.max(120)]),
-        password: new FormControl('', [Validators.required, Validators.pattern(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm)]),
-        confirmPassword: new FormControl('', [Validators.required]),
-        phoneNumber: new FormControl('', [Validators.required, Validators.minLength(13), Validators.maxLength(13)])
-    });
+            name: new FormControl('', [Validators.required, Validators.minLength(3)]),
+            email: new FormControl('', [Validators.required, Validators.email], [this._emailTakenValidator.validate]),
+            age: new FormControl<number | null>(null, [Validators.required, Validators.min(18), Validators.max(120)]),
+            password: new FormControl('', [Validators.required, Validators.pattern(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/gm)]),
+            confirmPassword: new FormControl('', [Validators.required]),
+            phoneNumber: new FormControl('', [Validators.required, Validators.minLength(13), Validators.maxLength(13)])
+        }, [
+            RegisterValidators.match('password', 'confirmPassword')
+        ]
+    );
 
     showAlert: boolean = false;
-    alertColor: string = 'blue';
+    alertColor: AlertColor = 'blue';
     alertMessage: string = 'Please wait! Your account is begin created.';
     inSubmission = false;
 
-    constructor(private readonly _authService: AuthService) {
+    constructor(private readonly _authService: AuthService,
+                private readonly _emailTakenValidator: EmailTakenValidator) {
     }
 
     async register() {
@@ -40,7 +47,7 @@ export class RegisterComponent {
                 this.registerForm.value.name as string,
                 this.registerForm.value.phoneNumber as string
             );
-            await  this._authService.createUser(userModel);
+            await this._authService.createUser(userModel);
         } catch (error) {
             console.log(error);
 

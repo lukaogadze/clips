@@ -27,12 +27,17 @@ export class AuthService {
         this.isAuthenticated$ = this._angularFireAuth.user.pipe(map(x => !!x));
         this.isAuthenticatedWithDelay$ = this.isAuthenticated$.pipe(delay(1000));
     }
+
     async login(email: string, password: string) {
         await this._angularFireAuth.signInWithEmailAndPassword(email, password);
     }
 
     async logout() {
         await this._angularFireAuth.signOut();
+    }
+
+    isEmailTaken(email: string) {
+        return this._angularFireAuth.fetchSignInMethodsForEmail(email);
     }
 
     async createUser(userDate: UserModel) {
