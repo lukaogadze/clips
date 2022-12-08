@@ -3,6 +3,7 @@ import {AngularFireAuth} from "@angular/fire/compat/auth";
 import {AngularFirestore, AngularFirestoreCollection} from "@angular/fire/compat/firestore";
 import {UserModel} from "../models/user.model";
 import {delay, map, Observable} from "rxjs";
+import firebase from "firebase/compat/app";
 
 @Injectable({
     providedIn: 'root'
@@ -17,8 +18,11 @@ export class AuthService {
         }
     >;
 
+
+
     readonly isAuthenticated$: Observable<boolean>;
     readonly isAuthenticatedWithDelay$: Observable<boolean>;
+    readonly user$: Observable<firebase.User | null>;
 
     constructor(private readonly _angularFireAuth: AngularFireAuth,
                 private readonly _angularFireStore: AngularFirestore) {
@@ -26,6 +30,7 @@ export class AuthService {
 
         this.isAuthenticated$ = this._angularFireAuth.user.pipe(map(x => !!x));
         this.isAuthenticatedWithDelay$ = this.isAuthenticated$.pipe(delay(1000));
+        this.user$ = this._angularFireAuth.user;
     }
 
     async login(email: string, password: string) {
