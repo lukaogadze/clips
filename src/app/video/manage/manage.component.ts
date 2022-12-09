@@ -3,7 +3,7 @@ import {ActivatedRoute, Params, Router} from "@angular/router";
 import {ClipService} from "../../services/clip.service";
 import {ClipModel} from "../../services/clip.model";
 import {ModalService} from "../../services/modal.service";
-import {BehaviorSubject, Observable} from "rxjs";
+import {BehaviorSubject} from "rxjs";
 
 @Component({
   selector: 'app-manage',
