@@ -1,9 +1,10 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import {NgModule} from '@angular/core';
+import {RouterModule, Routes} from '@angular/router';
 import {HomeComponent} from "./home/home.component";
 import {AboutComponent} from "./about/about.component";
 import {ClipComponent} from "./clip/clip.component";
 import {NotFoundComponent} from "./not-found/not-found.component";
+import {ClipService} from "./services/clip.service";
 
 const routes: Routes = [
     {
@@ -13,7 +14,13 @@ const routes: Routes = [
         path: 'about', component: AboutComponent
     },
     {
-        path: 'clip/:id', component: ClipComponent
+        path: 'clip/:id', component: ClipComponent, resolve: {
+            clip: ClipService
+        }
+    },
+    {
+        path: '',
+        loadChildren: () => import('./video/video.module').then(m => m.VideoModule)
     },
     {
         path: '**', component: NotFoundComponent
@@ -21,7 +28,8 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+    imports: [RouterModule.forRoot(routes)],
+    exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {
+}

@@ -1,20 +1,29 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, ElementRef, OnInit} from '@angular/core';
 import {ActivatedRoute} from "@angular/router";
+import {ClipModel} from "../services/clip.model";
+import {DatePipe} from "@angular/common";
 
 @Component({
-  selector: 'app-clip',
-  templateUrl: './clip.component.html',
-  styleUrls: ['./clip.component.css']
+    selector: 'app-clip',
+    templateUrl: './clip.component.html',
+    styleUrls: ['./clip.component.css'],
+    providers: [DatePipe]
 })
 export class ClipComponent implements OnInit {
-    id: string;
-    constructor(private readonly _activatedRoute: ActivatedRoute) {
-        this.id = '';
+    clip: ClipModel | null;
+    private _videoElement: HTMLVideoElement | null;
+
+    constructor(private readonly _activatedRoute: ActivatedRoute,
+                private readonly _elementRef: ElementRef) {
+        this.clip = null;
+        this._videoElement = null;
     }
 
     ngOnInit(): void {
-        this._activatedRoute.params.subscribe(params => {
-            this.id = params.id
+        this._videoElement = this._elementRef.nativeElement.querySelector('video');
+        this._activatedRoute.data.subscribe(x => {
+            this.clip = x.clip;
+            this._videoElement?.load();
         });
     }
 

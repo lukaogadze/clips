@@ -73,4 +73,17 @@ export class ManageComponent implements OnInit {
 
         this.clips = this.clips.filter(x => x.docId !== clip.docId);
     }
+
+    async copyToClipBoard($event: MouseEvent, docId: string | null) {
+        $event.preventDefault();
+        if (!docId) {
+            return;
+        }
+
+        const url = `${location.origin}/clip/${docId}`;
+
+        await navigator.clipboard.writeText(url);
+
+        alert('Link Copied!');
+    }
 }
