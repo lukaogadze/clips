@@ -4,7 +4,7 @@ import {AngularFireStorage, AngularFireUploadTask} from "@angular/fire/compat/st
 
 import {v4 as uuid} from 'uuid';
 import {AlertColor} from "../../shared/alert/alert.component";
-import {combineLatest, forkJoin, last, switchMap} from "rxjs";
+import {combineLatest, forkJoin, switchMap} from "rxjs";
 import {AuthService} from "../../services/auth.service";
 import firebase from "firebase/compat/app";
 import {ClipService} from "../../services/clip.service";
@@ -182,7 +182,7 @@ export class UploadComponent implements OnDestroy {
 
         let screenshotCount = 1;
 
-        const listener = (e: Event) => {
+        const listener = () => {
             ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
             this.screenshots.push(canvas.toDataURL('image/jpeg'));
             if (screenshotCount < 3) {
