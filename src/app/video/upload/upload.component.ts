@@ -4,7 +4,7 @@ import {AngularFireStorage, AngularFireUploadTask} from "@angular/fire/compat/st
 
 import {v4 as uuid} from 'uuid';
 import {AlertColor} from "../../shared/alert/alert.component";
-import {last, switchMap} from "rxjs";
+import {combineLatest, forkJoin, last, switchMap} from "rxjs";
 import {AuthService} from "../../services/auth.service";
 import firebase from "firebase/compat/app";
 import {ClipService} from "../../services/clip.service";
@@ -37,7 +37,10 @@ export class UploadComponent implements OnDestroy {
 
     private _file: File | null | undefined;
     private _user: firebase.User | null;
-    private _fileUploadTask: AngularFireUploadTask | null;
+    private _videoUploadTask: AngularFireUploadTask | null;
+    private _screenshotUploadTask: AngularFireUploadTask | null;
+    screenshots: string[];
+    selectedScreenshot: string;
 
 
     constructor(private readonly _angularFireStorage: AngularFireStorage,
@@ -55,13 +58,16 @@ export class UploadComponent implements OnDestroy {
         this.uploadPercentage = 0;
         this.showPercentage = false;
         this._user = null;
-        this._fileUploadTask = null;
+        this._videoUploadTask = null;
+        this._screenshotUploadTask = null;
+        this.screenshots = [];
+        this.selectedScreenshot = '';
 
         this._authService.user$.subscribe(x => this._user = x);
     }
 
     ngOnDestroy(): void {
-        this._fileUploadTask?.cancel();
+        this._videoUploadTask?.cancel();
     }
 
     storeFile($event: Event) {
@@ -80,9 +86,16 @@ export class UploadComponent implements OnDestroy {
         );
 
         this.nextStep = true;
+
+        setTimeout(() => this.drawImages(this._file as any), 500);
     }
 
-    uploadFile() {
+    private async blobFromURL(url: string) {
+        const response = await fetch(url);
+        return await response.blob();
+    }
+
+    async uploadFile() {
         this.uploadForm.disable();
         this.showAlert = true;
         this.alertColor = "blue";
@@ -93,25 +106,49 @@ export class UploadComponent implements OnDestroy {
         const clipFileName = uuid();
         const clipPath = `clips/${clipFileName}.mp4`;
 
-        this._fileUploadTask = this._angularFireStorage.upload(clipPath, this._file);
+        const screenshotBlob = await this.blobFromURL(this.selectedScreenshot);
+        const screenshotPath = `screenshots/${clipFileName}.png`;
+
+        this._videoUploadTask = this._angularFireStorage.upload(clipPath, this._file);
         const clipReference = this._angularFireStorage.ref(clipPath);
 
-        this._fileUploadTask.percentageChanges().subscribe(x => this.uploadPercentage = x as number / 100);
+        this._screenshotUploadTask = this._angularFireStorage.upload(screenshotPath, screenshotBlob);
+        const screenshotReference = this._angularFireStorage.ref(screenshotPath);
 
-        this._fileUploadTask.snapshotChanges().pipe(last(), switchMap(() => clipReference.getDownloadURL())).subscribe({
-            next: async (url: string) => {
+        combineLatest([this._videoUploadTask.percentageChanges(), this._screenshotUploadTask.percentageChanges()])
+            .subscribe(values => {
+                const [clipProgress, screenshotProgress] = values;
+                if (!clipProgress || !screenshotProgress) {
+                    return;
+                }
+
+                const total = clipProgress + screenshotProgress;
+
+                this.uploadPercentage = total / 200;
+            })
+
+        forkJoin([this._videoUploadTask.snapshotChanges(), this._screenshotUploadTask.snapshotChanges()])
+            .pipe(
+                switchMap(
+                    () => forkJoin([clipReference.getDownloadURL(), screenshotReference.getDownloadURL()])
+                )
+            ).subscribe({
+            next: async (urls: string[]) => {
+                const [clipUrl, screenshotUrl] = urls;
+
                 const clip = new ClipModel(
                     this._user?.uid as string,
                     this._user?.displayName as string,
                     this.uploadForm.value.title as string,
                     `${clipFileName}.mp4`,
-                    url,
-                    firebase.firestore.FieldValue.serverTimestamp()
+                    clipUrl,
+                    screenshotUrl,
+                    firebase.firestore.FieldValue.serverTimestamp(),
+                    null,
+                    `${clipFileName}.png`
                 );
 
                 const clipDocumentReference = await this._clipService.createClip(clip)
-
-                console.log(clip);
 
                 this.alertColor = "green";
                 this.alertMessage = 'Success! Your clip is now ready to share with the world.';
@@ -121,7 +158,7 @@ export class UploadComponent implements OnDestroy {
                     this._router.navigate([
                         'clip', clipDocumentReference.id
                     ]);
-                }, 1000);
+                }, 500);
             },
             error: (error) => {
                 this.uploadForm.enable();
@@ -132,6 +169,33 @@ export class UploadComponent implements OnDestroy {
                 console.log(error)
             }
         })
+    }
+
+    private drawImages(file: File) {
+        const video = document.createElement('video');
+        video.src = URL.createObjectURL(file);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1920;
+        canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+
+        let screenshotCount = 1;
+
+        const listener = (e: Event) => {
+            ctx!.drawImage(video, 0, 0, canvas.width, canvas.height);
+            this.screenshots.push(canvas.toDataURL('image/jpeg'));
+            if (screenshotCount < 3) {
+                screenshotCount++;
+                video.currentTime = screenshotCount;
+            } else {
+                this.selectedScreenshot = this.screenshots[0];
+                video.removeEventListener('timeupdate', listener, false);
+            }
+        };
+
+        video.addEventListener('timeupdate', listener);
+        video.currentTime = 1;
     }
 }
 

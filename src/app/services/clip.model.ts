@@ -6,7 +6,9 @@ export class ClipModel {
                 public title: string,
                 readonly fileName: string,
                 readonly url: string,
+                readonly screenshotUrl: string,
                 readonly timeStamp: firebase.firestore.FieldValue,
-                readonly docId: string | null = null) {
+                readonly docId: string | null = null,
+                readonly screenshotFileName: string) {
     }
 }

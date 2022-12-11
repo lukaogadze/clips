@@ -49,7 +49,9 @@ export class ClipService {
 
     async deleteClip(clip: ClipModel) {
         const clipRef = this._angularFireStorage.ref(`clips/${clip.fileName}`);
+        const screenshotRef = this._angularFireStorage.ref(`screenshots/${clip.screenshotFileName}`);
         await clipRef.delete();
+        await screenshotRef.delete();
         await this._clipsCollection.doc(clip.docId as string).delete()
     }
 }
